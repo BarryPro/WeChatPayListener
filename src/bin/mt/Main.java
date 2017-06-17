@@ -28,19 +28,19 @@ public class Main {
             //noinspection ResultOfMethodCallIgnored
             ONLINE_FILE.delete();
         final WeChat weChat = new WeChat();
-        System.out.println("正在获取登录二维码..");
+        logger.info("正在获取登录二维码..");
         weChat.login(new WeChat.LoginListener() {
             ImageViewer viewerFrame;
 
             @Override
             public void onReceiveQRCode(byte[] jpgData) {
-                System.out.println("获取成功，请用手机微信扫码");
+                logger.info("获取成功，请用手机微信扫码");
                 viewerFrame = new ImageViewer(jpgData);
             }
 
             @Override
             public void onQRCodeScanned(byte[] jpgData) {
-                System.out.println("扫码成功，请在手机微信中点击登录");
+                logger.info("扫码成功，请在手机微信中点击登录");
                 if (viewerFrame != null) {
                     viewerFrame.setImage(jpgData);
                 }
@@ -54,10 +54,10 @@ public class Main {
                     viewerFrame = null;
                 }
                 if (loginSucceed) {
-                    System.out.println("登录成功");
+                    logger.info("登录成功");
                     try {
                         if (!ONLINE_FILE.createNewFile()) {
-                            System.out.println("创建Online文件失败");
+                            logger.info("创建Online文件失败");
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -69,7 +69,7 @@ public class Main {
                                 if (weChat.syncCheck() < 1000)
                                     continue w;
                             } catch (IOException e) {
-                                logger.error("SyncCheck", e);
+                                logger.debug("SyncCheck", e);
                                 continue w;
                             }
                         }
@@ -79,11 +79,11 @@ public class Main {
                     //noinspection ResultOfMethodCallIgnored
                     ONLINE_FILE.delete();
                     if (Email.sendEmail("921558445@qq.com", "微信离线通知", "服务器的微信已经离线啦，快去登录！"))
-                        System.out.println("微信已离线，发送通知邮件成功");
+                        logger.info("微信已离线，发送通知邮件成功");
                     else
-                        System.out.println("微信已离线，发送通知邮件失败");
+                        logger.info("微信已离线，发送通知邮件失败");
                 } else {
-                    System.out.println("登录失败");
+                    logger.info("登录失败");
                     //noinspection ResultOfMethodCallIgnored
                     ONLINE_FILE.delete();
                 }

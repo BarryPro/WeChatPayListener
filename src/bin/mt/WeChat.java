@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 import static bin.mt.Util.*;
 
+@SuppressWarnings("WeakerAccess")
 public class WeChat {
     private static final Logger logger = LoggerFactory.getLogger(WeChat.class);
 
@@ -138,7 +139,7 @@ public class WeChat {
                 pushDomainName = "webpush." + domainName;
                 return true;
             default:
-                System.out.println(str);
+                logger.debug("checkQRCode: unknown code - " + str);
                 return false;
         }
         return false;
@@ -245,10 +246,13 @@ public class WeChat {
         Response response;
         try {
             response = client.newCall(request).execute();
-        } catch (IOException e) {
+        } catch (Exception e) {
             return 1100;
         }
-        checkStatusCode(response);
+        if (!response.isSuccessful()) {
+            response.close();
+            return 1100;
+        }
 
         //noinspection ConstantConditions
         String str = response.body().string();
@@ -258,7 +262,7 @@ public class WeChat {
 
         // 1101 1100 1102掉线
         if (retCode.length() == 4 && retCode.startsWith("1")) {
-            System.out.println(str);
+            logger.warn(str);
             return Integer.parseInt(retCode);
         }
         if (selector.equals("0"))
@@ -296,8 +300,17 @@ public class WeChat {
                 .build();
 
 
-        Response response = client.newCall(request).execute();
-        checkStatusCode(response);
+        Response response;
+        try {
+            response = client.newCall(request).execute();
+        } catch (Exception e) {
+            return;
+        }
+        if (!response.isSuccessful()) {
+            response.close();
+            return;
+        }
+
         //noinspection ConstantConditions
         content = response.body().string();
         response.close();
@@ -343,7 +356,7 @@ public class WeChat {
         }
         String mark = getStringMiddle(con, "付款方留言：", "<br/>");
         String time = getStringMiddle(con, "到账时间：", "<br/>");
-        logger.info("二维码收款：" + money + "元，备注：" + (mark.isEmpty() ? "无" : mark));
+        logger.info("二维码收款：{}元，备注：{}", money, mark.isEmpty() ? "无" : mark);
 
         // 下面是收到转账后处理，业务代码不公开，请改成你自己的
         MtUtil.openVip(mark, money, time);
