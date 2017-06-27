@@ -68,7 +68,7 @@ public class Main {
                             try {
                                 if (weChat.syncCheck() < 1000)
                                     continue w;
-                            } catch (IOException e) {
+                            } catch (Throwable e) {
                                 logger.debug("SyncCheck", e);
                                 continue w;
                             }
