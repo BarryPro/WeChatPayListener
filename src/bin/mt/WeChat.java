@@ -268,7 +268,11 @@ public class WeChat {
         if (selector.equals("0"))
             return 0;
         // 有消息
-        getMessage();
+        try {
+            getMessage();
+        } catch (Throwable e) {
+            return 1000;
+        }
         return 1;
     }
 
