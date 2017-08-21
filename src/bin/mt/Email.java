@@ -16,6 +16,11 @@ public class Email {
             props.setProperty("mail.smtp.auth", "true");
             props.setProperty("mail.host", "smtp.163.com");
             props.setProperty("mail.transport.protocol", "smtp");
+
+            props.setProperty("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+            props.setProperty("mail.smtp.socketFactory.port", "465");
+            props.setProperty("mail.smtp.port", "465");
+
             Session session = Session.getInstance(props);
             Message msg = new MimeMessage(session);
             msg.setSubject(title);
