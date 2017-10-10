@@ -27,13 +27,29 @@ public class Main {
         if (ONLINE_FILE.exists())
             //noinspection ResultOfMethodCallIgnored
             ONLINE_FILE.delete();
-        final WeChat weChat = new WeChat();
-        logger.info("正在获取登录二维码..");
-        weChat.login(new WeChat.LoginListener() {
+
+        login();
+
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            if (scanner.nextLine().equalsIgnoreCase("exit")) {
+                System.exit(0);
+                break;
+            }
+        }
+    }
+
+    private static void login() {
+        final WeChat.WeChatListener listener = new WeChat.WeChatListener() {
             ImageViewer viewerFrame;
 
             @Override
-            public void onReceiveQRCode(byte[] jpgData) {
+            public void onLoadingQRCode() {
+                logger.info("正在获取登录二维码..");
+            }
+
+            @Override
+            public void onReceivedQRCode(byte[] jpgData) {
                 logger.info("获取成功，请用手机微信扫码");
                 viewerFrame = new ImageViewer(jpgData);
             }
@@ -49,46 +65,44 @@ public class Main {
             @Override
             public void onLoginResult(boolean loginSucceed) {
                 if (viewerFrame != null) {
-//                    viewerFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
                     viewerFrame.dispose();
                     viewerFrame = null;
                 }
                 if (loginSucceed) {
-                    long time = System.currentTimeMillis();
                     logger.info("登录成功");
                     try {
                         if (!ONLINE_FILE.createNewFile()) {
-                            logger.info("创建Online文件失败");
+                            logger.error("创建Online文件失败");
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
-                    }
-                    w:
-                    while (true) {
-                        for (int i = 0; i < 10; i++) {
-                            try {
-                                if (weChat.syncCheck() < 1000)
-                                    continue w;
-                            } catch (Throwable e) {
-                                logger.debug("SyncCheck", e);
-                                continue w;
-                            }
-                        }
-                        // 如果10次都错误，break
-                        break;
-                    }
-                    //noinspection ResultOfMethodCallIgnored
-                    ONLINE_FILE.delete();
-                    if (System.currentTimeMillis() - time > 5000) {
-                        if (Email.sendEmail("921558445@qq.com", "微信离线通知", "服务器的微信已经离线啦，快去登录！"))
-                            logger.info("微信已离线，发送通知邮件成功");
-                        else
-                            logger.info("微信已离线，发送通知邮件失败");
                     }
                 } else {
                     logger.info("登录失败");
                     //noinspection ResultOfMethodCallIgnored
                     ONLINE_FILE.delete();
+                }
+            }
+
+            @Override
+            public void onReceivedMoney(String money, String mark, String time) throws IOException {
+                logger.info("二维码收款：{}元，备注：{}", money, mark.isEmpty() ? "无" : mark);
+                // 下面是收到转账后处理，业务代码不公开，请改成你自己的
+                MtUtil.openVip(mark, money, time);
+            }
+
+            @Override
+            public void onDropped(long onlineTime) {
+                //noinspection ResultOfMethodCallIgnored
+                ONLINE_FILE.delete();
+                if (onlineTime > 5000) {
+                    if (Email.sendEmail("921558445@qq.com", "微信离线通知", "服务器的微信已经离线啦，快去登录！"))
+                        logger.info("微信已离线，发送通知邮件成功");
+                    else
+                        logger.info("微信已离线，发送通知邮件失败");
+                } else {
+                    logger.info("请尝试重新登录");
+                    login();
                 }
             }
 
@@ -100,13 +114,7 @@ public class Main {
                     viewerFrame = null;
                 }
             }
-        });
-        Scanner scanner = new Scanner(System.in);
-        while (true) {
-            if (scanner.nextLine().equalsIgnoreCase("exit")) {
-                System.exit(0);
-                break;
-            }
-        }
+        };
+        new WeChat(listener).login();
     }
 }

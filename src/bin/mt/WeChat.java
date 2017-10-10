@@ -38,6 +38,8 @@ public class WeChat {
     private String syncKey;
     private JSONObject syncKeyJson;
 
+    private WeChatListener listener;
+
     private CookieJar cookieJar = new CookieJar() {
         HashMap<String, List<Cookie>> cookieStore = new HashMap<>();
 
@@ -72,6 +74,9 @@ public class WeChat {
             .connectTimeout(30, TimeUnit.SECONDS)
             .cookieJar(cookieJar).followRedirects(false).build();
 
+    public WeChat(WeChatListener listener) {
+        this.listener = listener;
+    }
 
     private byte[] getLoginQRCode() throws IOException {
         String url = "https://wx2.qq.com/?&lang=zh_CN";
@@ -111,8 +116,15 @@ public class WeChat {
         return data;
     }
 
-    private boolean checkQRCode(LoginListener listener) throws IOException {
-        String url = "https://login.wx2.qq.com/cgi-bin/mmwebwx-bin/login?loginicon=true&uuid=" + uuid + "&tip=0&r=-78951827&_=" + System.currentTimeMillis();
+    private long lastCheckQRCodeTime;
+
+    private boolean checkQRCode() throws IOException {
+        if (lastCheckQRCodeTime == -1)
+            lastCheckQRCodeTime = System.currentTimeMillis();
+        else
+            lastCheckQRCodeTime++;
+        int r = (int) (System.currentTimeMillis() & 0xFFFFFFF);
+        String url = "https://login.wx2.qq.com/cgi-bin/mmwebwx-bin/login?loginicon=true&uuid=" + uuid + "&tip=0&r=-" + r + "&_=" + lastCheckQRCodeTime;
         Request request = new Request.Builder().url(url)
                 .addHeader("accept", "*/*")
                 .addHeader("connection", "Keep-Alive")
@@ -173,13 +185,15 @@ public class WeChat {
         return false;
     }
 
-    public void login(LoginListener listener) {
+    public void login() {
+        lastCheckQRCodeTime = -1;
+        listener.onLoadingQRCode();
         new Thread(() -> {
             try {
                 byte[] data = getLoginQRCode();
-                listener.onReceiveQRCode(data);
+                listener.onReceivedQRCode(data);
                 while (true) {
-                    if (checkQRCode(listener))
+                    if (checkQRCode())
                         break;
                     try {
                         Thread.sleep(100);
@@ -188,6 +202,24 @@ public class WeChat {
                     }
                 }
                 listener.onLoginResult(isLogged());
+                if (isLogged()) {
+                    long time = System.currentTimeMillis();
+                    w:
+                    while (true) {
+                        for (int i = 0; i < 10; i++) {
+                            try {
+                                if (syncCheck() < 1000)
+                                    continue w;
+                            } catch (Throwable e) {
+                                logger.debug("SyncCheck", e);
+                                continue w;
+                            }
+                        }
+                        // 如果10次都得到错误的返回码，break
+                        break;
+                    }
+                    listener.onDropped(System.currentTimeMillis() - time);
+                }
             } catch (IOException e) {
                 listener.onException(e);
             }
@@ -198,7 +230,8 @@ public class WeChat {
         String postData = "{\"BaseRequest\":{\"Uin\":\"" + wxuin
                 + "\",\"Sid\":\"" + wxsid + "\",\"Skey\":\"" + skey
                 + "\",\"DeviceID\":\"" + get15RandomText() + "\"}}";
-        String url = "https://" + domainName + "/cgi-bin/mmwebwx-bin/webwxinit?r=-1747024806&lang=zh_CN&pass_ticket=" + pass_ticket;
+        int r = (int) (System.currentTimeMillis() & 0xFFFFFFF);
+        String url = "https://" + domainName + "/cgi-bin/mmwebwx-bin/webwxinit?r=-" + r + "&lang=zh_CN&pass_ticket=" + pass_ticket;
         Request request = new Request.Builder().url(url)
                 .method("POST", RequestBody.create(MediaType.parse("application/json;charset=UTF-8"), postData))
                 .addHeader("accept", "*/*")
@@ -228,7 +261,7 @@ public class WeChat {
 //        System.out.println(syncKeyJson.toString());
     }
 
-    public int syncCheck() throws IOException {
+    private int syncCheck() throws IOException {
         String url = "https://" + pushDomainName + "/cgi-bin/mmwebwx-bin/synccheck?r=" + System.currentTimeMillis()
                 + "&skey=" + skey.replace("@", "%40") + "&sid=" + wxsid + "&uin=" + wxuin + "&deviceid=" + get15RandomText()
                 + "&synckey=" + syncKey.replace("|", "%7C") + "&_=" + System.currentTimeMillis();
@@ -346,25 +379,23 @@ public class WeChat {
         }
     }
 
-    private boolean checkPay(String con) throws IOException {
+    private void checkPay(String con) throws IOException {
         if (!con.contains("CDATA[微信支付]") || !con.contains("CDATA[二维码收款到账") || !con.contains("收款成功"))
-            return false;
+            return;
         String money = getStringMiddle(con, "二维码收款到账", "元");
         if (money.isEmpty())
-            return false;
+            return;
         try {
             //noinspection ResultOfMethodCallIgnored
             Float.parseFloat(money);
         } catch (NumberFormatException e) {
-            return false;
+            return;
         }
+
         String mark = getStringMiddle(con, "付款方留言：", "<br/>");
         String time = getStringMiddle(con, "到账时间：", "<br/>");
-        logger.info("二维码收款：{}元，备注：{}", money, mark.isEmpty() ? "无" : mark);
 
-        // 下面是收到转账后处理，业务代码不公开，请改成你自己的
-        MtUtil.openVip(mark, money, time);
-        return true;
+        listener.onReceivedMoney(money, mark, time);
     }
 
     private static void checkStatusCode(Response response) throws IOException {
@@ -373,13 +404,15 @@ public class WeChat {
         }
     }
 
-    interface LoginListener {
+    interface WeChatListener {
+        void onLoadingQRCode();
+
         /**
          * 得到登录二维码
          *
          * @param jpgData 二维码图片
          */
-        void onReceiveQRCode(byte[] jpgData);
+        void onReceivedQRCode(byte[] jpgData);
 
         /**
          * 二维码被扫描
@@ -389,6 +422,15 @@ public class WeChat {
         void onQRCodeScanned(byte[] jpgData);
 
         void onLoginResult(boolean loginSucceed);
+
+        void onReceivedMoney(String money, String mark, String time) throws IOException;
+
+        /**
+         * 登录成功后掉线
+         *
+         * @param onlineTime 掉线之前保持在线到时长
+         */
+        void onDropped(long onlineTime);
 
         void onException(IOException e);
     }
