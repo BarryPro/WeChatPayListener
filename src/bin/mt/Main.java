@@ -54,6 +54,7 @@ public class Main {
                     viewerFrame = null;
                 }
                 if (loginSucceed) {
+                    long time = System.currentTimeMillis();
                     logger.info("登录成功");
                     try {
                         if (!ONLINE_FILE.createNewFile()) {
@@ -78,10 +79,12 @@ public class Main {
                     }
                     //noinspection ResultOfMethodCallIgnored
                     ONLINE_FILE.delete();
-                    if (Email.sendEmail("921558445@qq.com", "微信离线通知", "服务器的微信已经离线啦，快去登录！"))
-                        logger.info("微信已离线，发送通知邮件成功");
-                    else
-                        logger.info("微信已离线，发送通知邮件失败");
+                    if (System.currentTimeMillis() - time > 5000) {
+                        if (Email.sendEmail("921558445@qq.com", "微信离线通知", "服务器的微信已经离线啦，快去登录！"))
+                            logger.info("微信已离线，发送通知邮件成功");
+                        else
+                            logger.info("微信已离线，发送通知邮件失败");
+                    }
                 } else {
                     logger.info("登录失败");
                     //noinspection ResultOfMethodCallIgnored

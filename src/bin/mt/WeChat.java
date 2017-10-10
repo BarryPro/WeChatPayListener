@@ -74,7 +74,7 @@ public class WeChat {
 
 
     private byte[] getLoginQRCode() throws IOException {
-        String url = "https://wx.qq.com/";
+        String url = "https://wx2.qq.com/?&lang=zh_CN";
         Request request = new Request.Builder().url(url)
                 .addHeader("accept", "*/*")
                 .addHeader("connection", "Keep-Alive")
@@ -83,7 +83,7 @@ public class WeChat {
         Response response = client.newCall(request).execute();
         response.close();
 
-        url = "https://login.wx.qq.com/jslogin?appid=wx782c26e4c19acffb&redirect_uri=https%3A%2F%2Fwx2.qq.com%2Fcgi-bin%2Fmmwebwx-bin%2Fwebwxnewloginpage&fun=new&lang=zh_CN&_=" + System.currentTimeMillis();
+        url = "https://login.wx2.qq.com/jslogin?appid=wx782c26e4c19acffb&redirect_uri=https%3A%2F%2Fwx2.qq.com%2Fcgi-bin%2Fmmwebwx-bin%2Fwebwxnewloginpage&fun=new&lang=zh_CN&_=" + System.currentTimeMillis();
         request = new Request.Builder().url(url)
                 .addHeader("accept", "*/*")
                 .addHeader("connection", "Keep-Alive")
@@ -112,13 +112,13 @@ public class WeChat {
     }
 
     private boolean checkQRCode(LoginListener listener) throws IOException {
-        String url = "https://login.wx.qq.com/cgi-bin/mmwebwx-bin/login?loginicon=true&uuid=" + uuid + "&tip=0&r=-1722694480&_=" + System.currentTimeMillis();
+        String url = "https://login.wx2.qq.com/cgi-bin/mmwebwx-bin/login?loginicon=true&uuid=" + uuid + "&tip=0&r=-78951827&_=" + System.currentTimeMillis();
         Request request = new Request.Builder().url(url)
                 .addHeader("accept", "*/*")
                 .addHeader("connection", "Keep-Alive")
                 .addHeader("user-agent", UA)
-                .addHeader("host", "login.wx.qq.com")
-                .addHeader("referer", "https://wx.qq.com/")
+                .addHeader("host", "login.wx2.qq.com")
+                .addHeader("referer", "https://wx2.qq.com/?&lang=zh_CN")
                 .build();
         Response response = client.newCall(request).execute();
         checkStatusCode(response);
