@@ -136,7 +136,8 @@ public class WeChat {
         checkStatusCode(response);
         //noinspection ConstantConditions
         String str = response.body().string();
-        response.close();
+//        System.out.println(str);
+//        response.close();
         String code = getStringMiddle(str, "code=", ";");
         switch (code) {
             case "408":
@@ -157,7 +158,7 @@ public class WeChat {
         return false;
     }
 
-    private boolean isLogged() throws IOException {
+    private boolean checkIsLogged() throws IOException {
         Request request = new Request.Builder().url(loginUrl)
                 .addHeader("accept", "*/*")
                 .addHeader("connection", "Keep-Alive")
@@ -201,12 +202,13 @@ public class WeChat {
                         e.printStackTrace();
                     }
                 }
-                listener.onLoginResult(isLogged());
-                if (isLogged()) {
+                boolean logged = checkIsLogged();
+                listener.onLoginResult(logged);
+                if (logged) {
                     long time = System.currentTimeMillis();
                     w:
                     while (true) {
-                        for (int i = 0; i < 10; i++) {
+                        for (int i = 0; i < 5; i++) {
                             try {
                                 if (syncCheck() < 1000)
                                     continue w;
@@ -380,9 +382,10 @@ public class WeChat {
     }
 
     private void checkPay(String con) throws IOException {
+//        System.out.println(con);
         if (!con.contains("CDATA[微信支付]") || !con.contains("CDATA[二维码收款到账") || !con.contains("收款成功"))
             return;
-        String money = getStringMiddle(con, "二维码收款到账", "元");
+        String money = getStringMiddle(con, "收款金额：￥", "<br/>");
         if (money.isEmpty())
             return;
         try {

@@ -23,6 +23,7 @@ public class Main {
     });
 
     public static void main(String[] args) throws IOException {
+        logger.info("微信支付监听 V1.1");
         Runtime.getRuntime().addShutdownHook(SHUTDOWN_HANDLER);
         if (ONLINE_FILE.exists())
             //noinspection ResultOfMethodCallIgnored
