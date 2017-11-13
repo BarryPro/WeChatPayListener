@@ -383,7 +383,7 @@ public class WeChat {
 
     private void checkPay(String con) throws IOException {
 //        System.out.println(con);
-        if (!con.contains("CDATA[微信支付]") || !con.contains("CDATA[二维码收款到账") || !con.contains("收款成功"))
+        if (!con.contains("CDATA[微信支付]") || !con.contains("CDATA[收款到账通知") || !con.contains("收款成功"))
             return;
         String money = getStringMiddle(con, "收款金额：￥", "<br/>");
         if (money.isEmpty())
@@ -395,10 +395,13 @@ public class WeChat {
             return;
         }
 
-        String mark = getStringMiddle(con, "付款方留言：", "<br/>");
-        String time = getStringMiddle(con, "到账时间：", "<br/>");
+        String mark = getStringMiddle(con, "付款方备注：", "<br/>");
+        String all = getStringMiddle(con, "汇总：", "<br/>");
+        String count = getStringMiddle(all, "第", "笔");
+        String allMoney = getStringRight(all, "￥").replace(".", "");
+        all = "ID-" + count + "-" + allMoney;
 
-        listener.onReceivedMoney(money, mark, time);
+        listener.onReceivedMoney(money, mark, all);
     }
 
     private static void checkStatusCode(Response response) throws IOException {
@@ -426,7 +429,7 @@ public class WeChat {
 
         void onLoginResult(boolean loginSucceed);
 
-        void onReceivedMoney(String money, String mark, String time) throws IOException;
+        void onReceivedMoney(String money, String mark, String id) throws IOException;
 
         /**
          * 登录成功后掉线

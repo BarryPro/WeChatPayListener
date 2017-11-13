@@ -27,6 +27,13 @@ public class Util {
         return str.substring(i + left.length(), j);
     }
 
+    static String getStringRight(String str, String left) {
+        int i = str.indexOf(left);
+        if (i == -1)
+            return "";
+        return str.substring(i + left.length());
+    }
+
     private static final char[] hexDigits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
     private static final Charset CHARSET = Charset.forName("UTF-8");
 
