@@ -9,6 +9,7 @@ import sun.misc.BASE64Decoder;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,7 @@ import static bin.mt.Util.*;
 
 @SuppressWarnings("WeakerAccess")
 public class WeChat {
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     private static final Logger logger = LoggerFactory.getLogger(WeChat.class);
 
     static {
@@ -399,8 +401,7 @@ public class WeChat {
         String all = getStringMiddle(con, "汇总：", "<br/>");
         String count = getStringMiddle(all, "第", "笔");
         String allMoney = getStringRight(all, "￥").replace(".", "");
-        all = "ID-" + count + "-" + allMoney;
-
+        all = DATE_FORMAT.format(System.currentTimeMillis()) + "-" + count + "-" + allMoney;
         listener.onReceivedMoney(money, mark, all);
     }
 
