@@ -85,8 +85,13 @@ public class Main {
                 }
             }
 
+            String lastID = "";
+
             @Override
             public void onReceivedMoney(String money, String mark, String id) throws IOException {
+                if (lastID.equals(id))
+                    return;
+                lastID = id;
                 logger.info("二维码收款：{}元，备注：{}", money, mark.isEmpty() ? "无" : mark);
                 // 下面是收到转账后处理，业务代码不公开，请改成你自己的
                 MtUtil.openVip(mark, money, id);
