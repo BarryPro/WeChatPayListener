@@ -261,8 +261,8 @@ public class WeChat {
         }
         sb.deleteCharAt(0);
         syncKey = sb.toString();
-//        System.out.println(syncKey);
-//        System.out.println(syncKeyJson.toString());
+        System.out.println(syncKey);
+        System.out.println(syncKeyJson.toString());
     }
 
     private int syncCheck() throws IOException {
@@ -270,7 +270,7 @@ public class WeChat {
                 + "&skey=" + skey.replace("@", "%40") + "&sid=" + wxsid + "&uin=" + wxuin + "&deviceid=" + get15RandomText()
                 + "&synckey=" + syncKey.replace("|", "%7C") + "&_=" + System.currentTimeMillis();
 
-//        System.out.println("正在等待消息..");
+        System.out.println("正在等待消息..");
 
         Request request = new Request.Builder().url(url)
                 .addHeader("accept", "*/*")
@@ -329,7 +329,7 @@ public class WeChat {
         }
         json.put("rr", Integer.valueOf(sb.toString()));
         String content = json.toString();
-//        System.out.println(content);
+        System.out.println(content);
 
         String url = "https://" + domainName + "/cgi-bin/mmwebwx-bin/webwxsync?sid=" + wxsid + "&skey=" + skey.replace("@", "%40") + "&pass_ticket=" + pass_ticket;
         Request request = new Request.Builder().url(url)
@@ -355,7 +355,7 @@ public class WeChat {
         //noinspection ConstantConditions
         content = response.body().string();
         response.close();
-//        System.out.println(content);
+        System.out.println(content);
 
         JSONObject jsonObject = JSONObject.fromObject(content);
         JSONObject syncKeyJson = this.syncKeyJson = jsonObject.getJSONObject("SyncKey");
@@ -384,7 +384,7 @@ public class WeChat {
     }
 
     private void checkPay(String con) throws IOException {
-//        System.out.println(con);
+        System.out.println(con);
         if (!con.contains("CDATA[微信支付]") || !con.contains("CDATA[收款到账通知") || !con.contains("收款成功"))
             return;
         String money = getStringMiddle(con, "收款金额：￥", "<br/>");

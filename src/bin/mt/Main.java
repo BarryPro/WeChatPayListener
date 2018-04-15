@@ -18,7 +18,7 @@ public class Main {
 
     private static final Thread SHUTDOWN_HANDLER = new Thread(() -> {
         if (ONLINE_FILE.exists())
-            //noinspection ResultOfMethodCallIgnored
+            //方法检验结果
             ONLINE_FILE.delete();
     });
 
@@ -26,7 +26,7 @@ public class Main {
         logger.info("微信支付监听 V1.1");
         Runtime.getRuntime().addShutdownHook(SHUTDOWN_HANDLER);
         if (ONLINE_FILE.exists())
-            //noinspection ResultOfMethodCallIgnored
+            //方法检验结果
             ONLINE_FILE.delete();
 
         login();
