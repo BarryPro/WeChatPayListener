@@ -1,7 +1,6 @@
 out
 logs
 artifacts
-MtUtil.java
 Running
 workspace.xml
-/.idea/uiDesigner.xml
+/.idea
